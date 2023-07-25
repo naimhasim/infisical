@@ -208,6 +208,12 @@
             "integrations/cloud/aws-secret-manager"
           ]
         },
+        {
+          "group": "Digital Ocean",
+          "pages": [
+            "integrations/cloud/digital-ocean-app-platform"
+          ]
+        },
         "integrations/cloud/heroku",
         "integrations/cloud/vercel",
         "integrations/cloud/netlify",
@@ -220,6 +226,7 @@
         "integrations/cloud/checkly",
         "integrations/cloud/hashicorp-vault",
         "integrations/cloud/azure-key-vault",
+        "integrations/cloud/cloud-66",
         "integrations/cicd/githubactions",
         "integrations/cicd/gitlab",
         "integrations/cicd/circleci",
@@ -325,7 +332,8 @@
       "pages": [
         "security/overview",
         "security/data-model",
-        "security/mechanics"
+        "security/mechanics",
+        "security/service-tokens"
       ]
     },
     {
