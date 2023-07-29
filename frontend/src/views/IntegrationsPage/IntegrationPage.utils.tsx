@@ -35,7 +35,7 @@ export const redirectForProviderAuth = (integrationOption: TCloudIntegration) =>
     // generate CSRF token for OAuth2 code-token exchange integrations
     const state = crypto.randomBytes(16).toString("hex");
     localStorage.setItem("latestCSRFToken", state);
-
+    
     let link = "";
     switch (integrationOption.slug) {
       case "azure-key-vault":
@@ -86,6 +86,9 @@ export const redirectForProviderAuth = (integrationOption: TCloudIntegration) =>
       case "railway":
         link = `${window.location.origin}/integrations/railway/authorize`;
         break;
+      case "terraform-cloud":
+        link = `${window.location.origin}/integrations/terraform-cloud/authorize`;
+        break;
       case "hashicorp-vault":
         link = `${window.location.origin}/integrations/hashicorp-vault/authorize`;
         break;
@@ -103,6 +106,12 @@ export const redirectForProviderAuth = (integrationOption: TCloudIntegration) =>
         break;
       case "cloud-66":
         link = `${window.location.origin}/integrations/cloud-66/authorize`;
+        break;
+      case "northflank":
+        link = `${window.location.origin}/integrations/northflank/authorize`;
+        break;
+      case "windmill":
+        link = `${window.location.origin}/integrations/windmill/authorize`;
         break;
       default:
         break;

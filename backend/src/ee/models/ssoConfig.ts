@@ -1,8 +1,13 @@
 import { Schema, Types, model } from "mongoose";
 
+export enum AuthProvider {
+    OKTA_SAML = "okta-saml",
+    AZURE_SAML = "azure-saml"
+}
+
 export interface ISSOConfig {
     organization: Types.ObjectId;
-    authProvider: "okta-saml"
+    authProvider: AuthProvider;
     isActive: boolean;
     encryptedEntryPoint: string;
     entryPointIV: string;
@@ -13,9 +18,6 @@ export interface ISSOConfig {
     encryptedCert: string;
     certIV: string;
     certTag: string;
-    encryptedAudience: string;
-    audienceIV: string;
-    audienceTag: string;
 }
 
 const ssoConfigSchema = new Schema<ISSOConfig>(
@@ -26,9 +28,7 @@ const ssoConfigSchema = new Schema<ISSOConfig>(
         },
         authProvider: {
             type: String,
-            enum: [
-                "okta-saml"
-            ],
+            enum: AuthProvider,
             required: true
         },
         isActive: {
@@ -61,15 +61,6 @@ const ssoConfigSchema = new Schema<ISSOConfig>(
         },
         certTag: {
             type: String
-        },
-        encryptedAudience: {
-            type: String
-        },
-        audienceIV: {
-            type: String
-        },
-        audienceTag: {
-            type: String
         }
     },
     {
@@ -77,6 +68,4 @@ const ssoConfigSchema = new Schema<ISSOConfig>(
     }
 );
 
-const SSOConfig = model<ISSOConfig>("SSOConfig", ssoConfigSchema);
-
-export default SSOConfig;
+export const SSOConfig = model<ISSOConfig>("SSOConfig", ssoConfigSchema);

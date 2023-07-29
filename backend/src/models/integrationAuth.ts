@@ -18,11 +18,14 @@ import {
   INTEGRATION_HEROKU,
   INTEGRATION_LARAVELFORGE,
   INTEGRATION_NETLIFY,
+  INTEGRATION_NORTHFLANK,
   INTEGRATION_RAILWAY,
   INTEGRATION_RENDER,
   INTEGRATION_SUPABASE,
+  INTEGRATION_TERRAFORM_CLOUD,
   INTEGRATION_TRAVISCI,
-  INTEGRATION_VERCEL
+  INTEGRATION_VERCEL,
+  INTEGRATION_WINDMILL
 } from "../variables";
 import { Document, Schema, Types, model } from "mongoose";
 
@@ -50,7 +53,10 @@ export interface IIntegrationAuth extends Document {
     | "codefresh"
     | "digital-ocean-app-platform"
     | "bitbucket"
-    | "cloud-66";
+    | "cloud-66"
+    | "terraform-cloud"
+    | "northflank"
+    | "windmill";
   teamId: string;
   accountId: string;
   url: string;
@@ -94,12 +100,15 @@ const integrationAuthSchema = new Schema<IIntegrationAuth>(
         INTEGRATION_LARAVELFORGE,
         INTEGRATION_TRAVISCI,
         INTEGRATION_SUPABASE,
+        INTEGRATION_TERRAFORM_CLOUD,
         INTEGRATION_HASHICORP_VAULT,
         INTEGRATION_CLOUDFLARE_PAGES,
+        INTEGRATION_CODEFRESH,
+        INTEGRATION_WINDMILL,
         INTEGRATION_BITBUCKET,
         INTEGRATION_DIGITAL_OCEAN_APP_PLATFORM,
-        INTEGRATION_CODEFRESH,
         INTEGRATION_CLOUD_66,
+        INTEGRATION_NORTHFLANK
       ],
       required: true,
     },

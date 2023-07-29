@@ -27,16 +27,22 @@ import {
   INTEGRATION_LARAVELFORGE_API_URL,
   INTEGRATION_NETLIFY,
   INTEGRATION_NETLIFY_API_URL,
+  INTEGRATION_NORTHFLANK,
+  INTEGRATION_NORTHFLANK_API_URL,
   INTEGRATION_RAILWAY,
   INTEGRATION_RAILWAY_API_URL,
   INTEGRATION_RENDER,
   INTEGRATION_RENDER_API_URL,
   INTEGRATION_SUPABASE,
   INTEGRATION_SUPABASE_API_URL,
+  INTEGRATION_TERRAFORM_CLOUD,
+  INTEGRATION_TERRAFORM_CLOUD_API_URL,
   INTEGRATION_TRAVISCI,
   INTEGRATION_TRAVISCI_API_URL,
   INTEGRATION_VERCEL,
-  INTEGRATION_VERCEL_API_URL
+  INTEGRATION_VERCEL_API_URL,
+  INTEGRATION_WINDMILL,
+  INTEGRATION_WINDMILL_API_URL,
 } from "../variables";
 import { IIntegrationAuth } from "../models";
 import { Octokit } from "@octokit/rest";
@@ -134,6 +140,12 @@ const getApps = async ({
         serverId: accessId
       });
       break;
+    case INTEGRATION_TERRAFORM_CLOUD:
+      apps = await getAppsTerraformCloud({
+        accessToken,
+        workspacesId: accessId,
+      });
+      break;
     case INTEGRATION_TRAVISCI:
       apps = await getAppsTravisCI({
         accessToken,
@@ -153,7 +165,12 @@ const getApps = async ({
       apps = await getAppsCloudflarePages({
         accessToken,
         accountId: accessId
-      })
+      });
+      break;
+    case INTEGRATION_NORTHFLANK:
+      apps = await getAppsNorthflank({
+        accessToken,
+      });
       break;
     case INTEGRATION_BITBUCKET:
       apps = await getAppsBitBucket({
@@ -164,6 +181,11 @@ const getApps = async ({
     case INTEGRATION_CODEFRESH:
       apps = await getAppsCodefresh({
         accessToken,
+      });
+      break;
+    case INTEGRATION_WINDMILL:
+      apps = await getAppsWindmill({
+        accessToken
       });
       break;
     case INTEGRATION_DIGITAL_OCEAN_APP_PLATFORM:
@@ -564,6 +586,43 @@ const getAppsTravisCI = async ({ accessToken }: { accessToken: string }) => {
 };
 
 /**
+ * Return list of projects for Terraform Cloud integration
+ * @param {Object} obj
+ * @param {String} obj.accessToken - access token for Terraform Cloud API
+ * @param {String} obj.workspacesId - workspace id of Terraform Cloud projects
+ * @returns {Object[]} apps - names and ids of Terraform Cloud projects
+ * @returns {String} apps.name - name of Terraform Cloud projects
+ */
+const getAppsTerraformCloud = async ({ 
+  accessToken,
+  workspacesId
+}: {
+  accessToken: string;
+  workspacesId?: string;
+}) => {
+  const res = (
+    await standardRequest.get(`${INTEGRATION_TERRAFORM_CLOUD_API_URL}/api/v2/workspaces/${workspacesId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+    })
+  ).data.data;
+
+  const apps = []
+
+  const appsObj = {
+      name: res?.attributes.name,
+      appId: res?.id,
+  };
+
+  apps.push(appsObj)
+
+  return apps;
+};
+
+
+/**
  * Return list of repositories for GitLab integration
  * @param {Object} obj
  * @param {String} obj.accessToken - access token for GitLab API
@@ -826,6 +885,39 @@ const getAppsBitBucket = async ({
   return apps;
 }
 
+/** Return list of projects for Northflank integration
+ * @param {Object} obj
+ * @param {String} obj.accessToken - access token for Northflank API
+ * @returns {Object[]} apps - names of Northflank apps
+ * @returns {String} apps.name - name of Northflank app
+ */
+const getAppsNorthflank = async ({ accessToken }: { accessToken: string }) => {
+  const {
+    data: {
+      data: {
+        projects
+      }
+    }
+  } = await standardRequest.get(
+    `${INTEGRATION_NORTHFLANK_API_URL}/v1/projects`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Accept-Encoding": "application/json",
+      },
+    }
+  );
+
+  const apps = projects.map((a: any) => {
+    return {
+      name: a.name,
+      appId: a.id
+    };
+  });
+
+  return apps;
+};
+
 /**
  * Return list of projects for Supabase integration
  * @param {Object} obj
@@ -855,6 +947,106 @@ const getAppsCodefresh = async ({
   return apps;
 
 };
+
+/**
+ * Return list of projects for Windmill integration
+ * @param {Object} obj
+ * @param {String} obj.accessToken - access token for Windmill API
+ * @returns {Object[]} apps - names of Windmill workspaces
+ * @returns {String} apps.name - name of Windmill workspace
+ */
+const getAppsWindmill = async ({ accessToken }: { accessToken: string }) => {
+  const { data } = await standardRequest.get(
+    `${INTEGRATION_WINDMILL_API_URL}/workspaces/list`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Accept-Encoding": "application/json",
+      },
+    }
+  );
+  
+  // check for write access of secrets in windmill workspaces
+  const writeAccessCheck = data.map(async (app: any) => {
+    try {
+      const userPath = "u/user/variable";
+      const folderPath = "f/folder/variable";
+
+      const { data: writeUser } = await standardRequest.post(
+        `${INTEGRATION_WINDMILL_API_URL}/w/${app.id}/variables/create`,
+        {
+          path: userPath,
+          value: "variable",
+          is_secret: true,
+          description: "variable description"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Accept-Encoding": "application/json",
+          },
+        }
+      );
+
+      const { data: writeFolder } = await standardRequest.post(
+        `${INTEGRATION_WINDMILL_API_URL}/w/${app.id}/variables/create`,
+        {
+          path: folderPath,
+          value: "variable",
+          is_secret: true,
+          description: "variable description"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Accept-Encoding": "application/json",
+          },
+        }
+      );
+      
+      // is write access is allowed then delete the created secrets from workspace
+      if (writeUser && writeFolder) {
+        await standardRequest.delete(
+        `${INTEGRATION_WINDMILL_API_URL}/w/${app.id}/variables/delete/${userPath}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Accept-Encoding": "application/json",
+            },
+          }
+        );
+
+        await standardRequest.delete(
+        `${INTEGRATION_WINDMILL_API_URL}/w/${app.id}/variables/delete/${folderPath}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Accept-Encoding": "application/json",
+            },
+          }
+        );
+
+        return app;
+      } else {
+        return { error: "cannot write secret" };
+      }
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  });
+
+  const appsWriteResponses = await Promise.all(writeAccessCheck);
+  const appsWithWriteAccess = appsWriteResponses.filter((appRes: any) => !appRes.error);
+  
+  const apps = appsWithWriteAccess.map((a: any) => {
+    return {
+      name: a.name,
+      appId: a.id,
+    };
+  });
+  
+  return apps;
+}
 
 /**
  * Return list of applications for DigitalOcean App Platform integration
