@@ -19,6 +19,7 @@ import { publicPaths } from "@app/const";
 import {
   AuthProvider,
   OrgProvider,
+  PopUpProvider,
   SubscriptionProvider,
   UserProvider,
   WorkspaceProvider
@@ -95,21 +96,28 @@ const App = ({ Component, pageProps, ...appProps }: NextAppProp): JSX.Element =>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <OrgProvider>
-            <WorkspaceProvider>
-              <SubscriptionProvider>
-                <UserProvider>
-                  <NotificationProvider>
-                    <IntercomProvider>
-                      <AppLayout>
-                        <Component {...pageProps} />
-                      </AppLayout>
-                    </IntercomProvider>
-                  </NotificationProvider>
-                </UserProvider>
-              </SubscriptionProvider>
-            </WorkspaceProvider>
-          </OrgProvider>
+          <PopUpProvider popUpNames={[
+            "cmdSearch",
+            "upgradePlan",
+            "addNewWs",
+            "addMember"
+          ]}>
+            <OrgProvider>
+              <WorkspaceProvider>
+                <SubscriptionProvider>
+                  <UserProvider>
+                    <NotificationProvider>
+                      <IntercomProvider>
+                        <AppLayout>
+                          <Component {...pageProps} />
+                        </AppLayout>
+                      </IntercomProvider>
+                    </NotificationProvider>
+                  </UserProvider>
+                </SubscriptionProvider>
+              </WorkspaceProvider>
+            </OrgProvider>
+          </PopUpProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
